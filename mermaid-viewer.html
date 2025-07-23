@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mermaid Diagram Viewer</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.6.1/mermaid.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2c3e50, #3498db);
+            color: white;
+            padding: 30px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: repeating-linear-gradient(
+                45deg,
+                transparent,
+                transparent 2px,
+                rgba(255, 255, 255, 0.05) 2px,
+                rgba(255, 255, 255, 0.05) 4px
+            );
+            animation: shimmer 3s linear infinite;
+        }
+
+        @keyframes shimmer {
+            0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+            100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            position: relative;
+            z-index: 1;
+        }
+
+        .controls {
+            padding: 30px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .file-upload-area {
+            border: 3px dashed #3498db;
+            border-radius: 15px;
+            padding: 40px;
+            text-align: center;
+            margin-bottom: 20px;
+            transition: all 0.3s ease;
+            background: white;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .file-upload-area:hover {
+            border-color: #2980b9;
+            background: #f8f9fa;
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(52, 152, 219, 0.1);
+        }
+
+        .file-upload-area.dragover {
+            border-color: #27ae60;
+            background: #d5f4e6;
+            transform: scale(1.02);
+        }
+
+        .upload-icon {
+            font-size: 3rem;
+            color: #3498db;
+            margin-bottom: 15px;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .upload-button {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(52, 152, 219, 0.3);
+        }
+
+        .upload-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(52, 152, 219, 0.4);
+        }
+
+        .textarea-container {
+            margin-top: 20px;
+        }
+
+        .mermaid-input {
+            width: 100%;
+            height: 200px;
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            resize: vertical;
+            transition: border-color 0.3s ease;
+        }
+
+        .mermaid-input:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+        }
+
+
+        .diagram-container {
+            padding: 30px;
+            min-height: 400px;
+            background: white;
+        }
+
+        .diagram-title {
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+            color: #2c3e50;
+            text-align: center;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #3498db;
+        }
+
+        .mermaid-diagram {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 300px;
+            background: #fafafa;
+            border-radius: 10px;
+            border: 1px solid #e9ecef;
+        }
+
+        .error-message {
+            color: #e74c3c;
+            background: #fdf2f2;
+            border: 1px solid #f5c6cb;
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 15px;
+            font-family: 'Courier New', monospace;
+        }
+
+        .placeholder {
+            color: #6c757d;
+            font-style: italic;
+            font-size: 1.1rem;
+        }
+
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .controls {
+                padding: 20px;
+            }
+            
+            .file-upload-area {
+                padding: 30px 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔍 Mermaid Diagram Viewer</h1>
+            <p>Upload .mmd files or paste Mermaid code to preview your diagrams</p>
+        </div>
+
+        <div class="controls">
+            <div class="file-upload-area" id="uploadArea">
+                <div class="upload-icon">📁</div>
+                <p><strong>Drop your .mmd files here</strong> or click to browse</p>
+                <input type="file" id="fileInput" class="file-input" accept=".mmd,.txt" multiple>
+                <button class="upload-button" onclick="document.getElementById('fileInput').click()">
+                    Choose Files
+                </button>
+            </div>
+
+            <div class="textarea-container">
+                <textarea 
+                    id="mermaidInput" 
+                    class="mermaid-input" 
+                    placeholder="Or paste your Mermaid diagram code here...&#10;&#10;Example:&#10;graph TD&#10;    A[Start] --> B[Process]&#10;    B --> C[End]"
+                ></textarea>
+                
+            </div>
+        </div>
+
+        <div class="diagram-container">
+            <div class="diagram-title" id="diagramTitle">Ready to render diagrams</div>
+            <div class="mermaid-diagram" id="diagramOutput">
+                <div class="placeholder">
+                    Upload a .mmd file or paste Mermaid code above to see your diagram here
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize Mermaid
+        mermaid.initialize({ 
+            startOnLoad: false,
+            theme: 'default',
+            flowchart: {
+                useMaxWidth: true,
+                htmlLabels: true
+            }
+        });
+
+        // File upload handling
+        const fileInput = document.getElementById('fileInput');
+        const uploadArea = document.getElementById('uploadArea');
+        const mermaidInput = document.getElementById('mermaidInput');
+        const diagramOutput = document.getElementById('diagramOutput');
+        const diagramTitle = document.getElementById('diagramTitle');
+
+        // Drag and drop functionality
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+
+        uploadArea.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            handleFiles(files);
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            handleFiles(e.target.files);
+        });
+
+        function handleFiles(files) {
+            if (files.length === 0) return;
+
+            const file = files[0];
+            const reader = new FileReader();
+            
+            reader.onload = function(e) {
+                const content = e.target.result;
+                mermaidInput.value = content;
+                diagramTitle.textContent = `Diagram: ${file.name}`;
+                renderDiagram();
+            };
+            
+            reader.readAsText(file);
+        }
+
+        function renderDiagram() {
+            const mermaidCode = mermaidInput.value.trim();
+            
+            if (!mermaidCode) {
+                diagramOutput.innerHTML = '<div class="placeholder">Please enter some Mermaid code</div>';
+                return;
+            }
+
+            // Clear previous diagram
+            diagramOutput.innerHTML = '';
+            
+            try {
+                // Create a unique ID for this diagram
+                const diagramId = 'diagram-' + Date.now();
+                
+                // Render the diagram
+                mermaid.render(diagramId, mermaidCode).then(({svg}) => {
+                    diagramOutput.innerHTML = svg;
+                }).catch(error => {
+                    console.error('Mermaid rendering error:', error);
+                    diagramOutput.innerHTML = `
+                        <div class="error-message">
+                            <strong>Error rendering diagram:</strong><br>
+                            ${error.message || error}
+                        </div>
+                    `;
+                });
+                
+            } catch (error) {
+                console.error('Error:', error);
+                diagramOutput.innerHTML = `
+                    <div class="error-message">
+                        <strong>Error parsing diagram:</strong><br>
+                        ${error.message || error}
+                    </div>
+                `;
+            }
+        }
+
+
+        // Auto-render when typing (with debounce)
+        let renderTimeout;
+        mermaidInput.addEventListener('input', () => {
+            clearTimeout(renderTimeout);
+            renderTimeout = setTimeout(renderDiagram, 1000);
+        });
+    </script>
+</body>
+</html>
